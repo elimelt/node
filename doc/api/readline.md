@@ -686,6 +686,10 @@ sending it to the associated `stream`.
 
 <!-- YAML
 added: v17.0.0
+changes:
+  - version: REPLACEME
+    pr-url: https://github.com/nodejs/node/pull/REPLACEME
+    description: The `lineSeparator` option is supported.
 -->
 
 * `options` {Object}
@@ -716,6 +720,17 @@ added: v17.0.0
     `100`. It can be set to `Infinity`, in which case `\r` followed by `\n`
     will always be considered a single newline (which may be reasonable for
     [reading files][] with `\r\n` line delimiter). **Default:** `100`.
+    This option only affects the default separator set; when `lineSeparator`
+    is provided, `crlfDelay` has no effect — the supplied separator fully
+    determines line boundaries.
+  * `lineSeparator` {RegExp | string | string\[]} Restricts which characters
+    are treated as line terminators. When provided as a `RegExp`, it must have
+    the global (`g`) flag. String and string-array forms are compiled to a
+    regular expression internally; array entries are tried longest-first so
+    that e.g. `\r\n` matches before `\r`. Useful for reading JSONL produced by
+    `JSON.stringify`, which leaves `U+2028` and `U+2029` raw inside string
+    values. **Default:** `undefined` — splits on the full ECMAScript
+    `LineTerminator` set (LF, CR, CRLF, U+2028, U+2029).
   * `escapeCodeTimeout` {number} The duration `readlinePromises` will wait for a
     character (when reading an ambiguous key sequence in milliseconds one that
     can both form a complete key sequence using the input read so far and can
@@ -924,6 +939,9 @@ the current position of the cursor down.
 <!-- YAML
 added: v0.1.98
 changes:
+  - version: REPLACEME
+    pr-url: https://github.com/nodejs/node/pull/REPLACEME
+    description: The `lineSeparator` option is supported.
   - version:
       - v15.14.0
       - v14.18.0
@@ -981,6 +999,33 @@ changes:
     `100`. It can be set to `Infinity`, in which case `\r` followed by `\n`
     will always be considered a single newline (which may be reasonable for
     [reading files][] with `\r\n` line delimiter). **Default:** `100`.
+    This option only affects the default separator set; when `lineSeparator`
+    is provided, `crlfDelay` has no effect — the supplied separator fully
+    determines line boundaries.
+  * `lineSeparator` {RegExp | string | string\[]} Restricts which characters
+    are treated as line terminators. When provided as a `RegExp`, it must have
+    the global (`g`) flag. String and string-array forms are compiled to a
+    regular expression internally; array entries are tried longest-first so
+    that e.g. `\r\n` matches before `\r`. Useful for reading JSONL produced by
+    `JSON.stringify`, which leaves `U+2028` and `U+2029` raw inside string
+    values:
+
+    ```mjs
+    import { createInterface } from 'node:readline';
+    import { Readable } from 'node:stream';
+
+    const blob = `${JSON.stringify({ t: 'a\u2028b' })}\n`;
+    const rl = createInterface({
+      input: Readable.from([blob]),
+      lineSeparator: /\n/g,
+    });
+    for await (const line of rl) {
+      console.log(JSON.parse(line));
+    }
+    ```
+
+    **Default:** `undefined` — splits on the full ECMAScript `LineTerminator`
+    set (LF, CR, CRLF, U+2028, U+2029).
   * `escapeCodeTimeout` {number} The duration `readline` will wait for a
     character (when reading an ambiguous key sequence in milliseconds one that
     can both form a complete key sequence using the input read so far and can
